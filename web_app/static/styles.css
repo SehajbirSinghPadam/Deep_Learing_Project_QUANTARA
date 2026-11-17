@@ -607,4 +607,170 @@ table.data-table tbody tr:hover {
 .toast.toast-error { border-left-color: var(--down); }
 .toast.toast-success { border-left-color: var(--up); }
 
+/* ==========================================================================
+   Fully Responsive Breakpoints (Mobile, Tablet, Desktop)
+   ========================================================================== */
 
+/* Tablet & Smaller Desktops (<= 1024px) */
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 12px;
+  }
+
+  .chartlab-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stock-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .stock-select-btn {
+    width: auto;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+  }
+}
+
+/* Mobile Devices & Small Tablets (<= 768px) */
+@media (max-width: 768px) {
+  .topbar {
+    height: auto;
+    min-height: 48px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .nav-tabs {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 6px;
+  }
+
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .topbar-right {
+    gap: 10px;
+  }
+
+  .clock {
+    display: none;
+  }
+
+  .regime-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .regime-stats {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .kpi-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .kpi-unit {
+    border-right: none;
+    padding-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 6px;
+  }
+
+  .kpi-unit:nth-last-child(-n+2) {
+    border-bottom: none;
+  }
+
+  .oscillators-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  table.data-table th,
+  table.data-table td {
+    padding: 7px 8px;
+    font-size: 11px;
+  }
+}
+
+/* Small Phones (<= 480px) */
+@media (max-width: 480px) {
+  .brand-sub {
+    display: none;
+  }
+
+  .topbar {
+    padding: 6px 10px;
+  }
+
+  .model-selector label {
+    display: none;
+  }
+
+  .model-selector select {
+    max-width: 130px;
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  .kpi-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-unit {
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 6px;
+  }
+
+  .kpi-unit:last-child {
+    border-bottom: none;
+  }
+
+  .toast {
+    max-width: calc(100vw - 32px);
+  }
+
+  .prediction-summary .pred-headline {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

@@ -49,6 +49,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import {
   Search,
   ArrowLeft,
+  BookOpen,
   Command,
   Download,
   Share2,
@@ -66,6 +67,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Check,
+  X,
 } from "lucide-react";
 
 export default function CoreDashboardPage() {
@@ -86,6 +88,7 @@ export default function CoreDashboardPage() {
   }, [initTickStream]);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
 
@@ -170,23 +173,51 @@ export default function CoreDashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const curPred = predictions.find((p) => (p.Symbol || p.symbol) === selectedSymbol) || { conviction: 0.35, signal: "BUY / LONG" };
+  const curPred = predictions.find((p) => (p.Symbol || p.symbol) === selectedSymbol) || { conviction: 0.0, signal: "WAIT / CHOP" };
+
+  // Auto-sync prediction conviction and signal whenever the selected symbol or model changes
+  useEffect(() => {
+    const p = predictions.find((item) => (item.Symbol || item.symbol) === selectedSymbol);
+    if (p) {
+      const conv = p.conviction ?? 0;
+      setSimulatedConviction(conv);
+
+      const isBuy = p.signal?.includes("BUY") || conv > 0.05;
+      const isSell = p.signal?.includes("SELL") || p.signal?.includes("HEDGE") || conv < -0.05;
+
+      if (isBuy) {
+        setSimulatedSignal("BULLISH / BUY");
+        const conf = p.p_up ? Math.min(0.92, Math.max(0.55, p.p_up * 1.35)) : Math.min(0.88, 0.60 + Math.abs(conv));
+        setSimulatedConfidence(conf);
+      } else if (isSell) {
+        setSimulatedSignal("BEARISH / SELL");
+        const conf = p.p_down ? Math.min(0.92, Math.max(0.55, p.p_down * 1.35)) : Math.min(0.88, 0.60 + Math.abs(conv));
+        setSimulatedConfidence(conf);
+      } else {
+        setSimulatedSignal("NEUTRAL / HOLD");
+        const conf = p.p_hold ? Math.min(0.70, Math.max(0.48, p.p_hold * 1.1)) : 0.52;
+        setSimulatedConfidence(conf);
+      }
+    }
+  }, [selectedSymbol, predictions]);
 
   const confidencePoints = generateConfidenceBands(curPrice, simulatedConviction);
 
   // Handle What-If simulation re-computation
   const handleRunSimulation = (overrides: { volatility: number; volume_shift: number; sentiment_score: number }) => {
-    const bias = overrides.sentiment_score * 0.3 + overrides.volume_shift * 0.2;
-    const newConv = Math.min(0.9, Math.max(-0.9, (curPred.conviction || 0.3) + bias));
+    const bias = overrides.sentiment_score * 0.35 + overrides.volume_shift * 0.25;
+    const baseConv = curPred.conviction ?? 0;
+    const newConv = Math.min(0.9, Math.max(-0.9, baseConv + bias));
     setSimulatedConviction(newConv);
-    if (newConv > 0.15) {
-      setSimulatedSignal("BULLISH");
-      setSimulatedConfidence(0.65 + newConv * 0.25);
-    } else if (newConv < -0.15) {
-      setSimulatedSignal("BEARISH");
-      setSimulatedConfidence(0.62 + Math.abs(newConv) * 0.25);
+
+    if (newConv > 0.05) {
+      setSimulatedSignal("BULLISH / BUY");
+      setSimulatedConfidence(Math.min(0.92, 0.62 + newConv * 0.3));
+    } else if (newConv < -0.05) {
+      setSimulatedSignal("BEARISH / SELL");
+      setSimulatedConfidence(Math.min(0.92, 0.62 + Math.abs(newConv) * 0.3));
     } else {
-      setSimulatedSignal("NEUTRAL");
+      setSimulatedSignal("NEUTRAL / HOLD");
       setSimulatedConfidence(0.52);
     }
   };
@@ -210,16 +241,26 @@ export default function CoreDashboardPage() {
       <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
       <ShortcutsModal isOpen={shortcutsModalOpen} onClose={() => setShortcutsModalOpen(false)} />
 
-      {/* ── Collapsible Left Sidebar ── */}
+      {/* ── Mobile Drawer Overlay Backdrop ── */}
+      {mobileDrawerOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 lg:hidden transition-opacity"
+          onClick={() => setMobileDrawerOpen(false)}
+        />
+      )}
+
+      {/* ── Collapsible Left Sidebar (Responsive Drawer on Mobile) ── */}
       <aside
-        className={`border-r border-border bg-surface transition-all duration-300 flex flex-col justify-between shrink-0 z-40 ${
-          sidebarCollapsed ? "w-14" : "w-64"
-        }`}
+        className={`border-r border-border bg-surface transition-all duration-300 flex flex-col justify-between shrink-0 z-50 ${
+          mobileDrawerOpen
+            ? "fixed inset-y-0 left-0 w-72 max-w-[85vw] shadow-2xl flex"
+            : "hidden lg:flex"
+        } ${sidebarCollapsed ? "lg:w-14" : "lg:w-64"}`}
       >
         <div>
           {/* Brand header */}
           <div className="h-12 border-b border-border flex items-center justify-between px-3">
-            {!sidebarCollapsed ? (
+            {!sidebarCollapsed || mobileDrawerOpen ? (
               <Link href="/" className="flex items-baseline gap-1.5 font-mono">
                 <span className="font-extrabold text-sm text-accent tracking-tight">QUANTARA</span>
                 <span className="text-[10px] text-text-muted uppercase">// CORE</span>
@@ -227,21 +268,31 @@ export default function CoreDashboardPage() {
             ) : (
               <span className="font-mono font-bold text-accent mx-auto">Q</span>
             )}
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-elevated"
-            >
-              {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-            </button>
+            <div className="flex items-center">
+              <button
+                onClick={() => setMobileDrawerOpen(false)}
+                className="lg:hidden p-1 rounded text-text-muted hover:text-text-primary hover:bg-elevated"
+                aria-label="Close Sidebar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="hidden lg:block p-1 rounded text-text-muted hover:text-text-primary hover:bg-elevated"
+                aria-label="Collapse Sidebar"
+              >
+                {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           {/* Sidebar Nav Items */}
           <div className="p-2 space-y-4 font-mono text-xs overflow-y-auto max-h-[calc(100vh-140px)]">
-            {!sidebarCollapsed && <WatchlistPanel />}
+            {(!sidebarCollapsed || mobileDrawerOpen) && <WatchlistPanel />}
 
             {/* Quick Universe Selector */}
             <div>
-              {!sidebarCollapsed && (
+              {(!sidebarCollapsed || mobileDrawerOpen) && (
                 <div className="text-[10px] uppercase font-bold text-text-muted px-2 mb-1.5">
                   Universe Equities
                 </div>
@@ -252,7 +303,10 @@ export default function CoreDashboardPage() {
                   return (
                     <button
                       key={u.symbol}
-                      onClick={() => setSelectedSymbol(u.symbol)}
+                      onClick={() => {
+                        setSelectedSymbol(u.symbol);
+                        setMobileDrawerOpen(false);
+                      }}
                       className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded transition-all text-left ${
                         isSel
                           ? "bg-accent/15 text-accent font-bold border border-accent/30"
@@ -260,7 +314,7 @@ export default function CoreDashboardPage() {
                       }`}
                     >
                       <span className="truncate">{u.symbol.replace(".NS", "")}</span>
-                      {!sidebarCollapsed && (
+                      {(!sidebarCollapsed || mobileDrawerOpen) && (
                         <span className="text-[10px] text-text-muted font-normal">{u.sector}</span>
                       )}
                     </button>
@@ -273,7 +327,7 @@ export default function CoreDashboardPage() {
 
         {/* Sidebar Footer */}
         <div className="p-3 border-t border-border bg-elevated/30 flex items-center justify-between text-xs font-mono text-text-muted">
-          {!sidebarCollapsed && (
+          {(!sidebarCollapsed || mobileDrawerOpen) && (
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-gain animate-pulse" />
               <span>{connectionStatus}</span>
@@ -290,35 +344,55 @@ export default function CoreDashboardPage() {
       </aside>
 
       {/* ── Main Workspace Body ── */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Top Navigation Bar */}
-        <header className="h-12 border-b border-border bg-surface px-4 flex items-center justify-between shrink-0 z-30">
-          <div className="flex items-center gap-3">
+        <header className="h-12 border-b border-border bg-surface px-2 sm:px-4 flex items-center justify-between shrink-0 z-30 gap-1.5 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+            {/* Mobile Sidebar Hamburger Toggle */}
+            <button
+              onClick={() => setMobileDrawerOpen(true)}
+              className="lg:hidden p-1.5 rounded text-text-muted hover:text-text-primary hover:bg-elevated shrink-0"
+              aria-label="Open Navigation Menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+
             {/* Direct Link back to Landing */}
             <Link
               href="/"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-elevated/70 hover:bg-elevated border border-border text-xs text-text-secondary hover:text-text-primary transition-all font-mono"
+              className="flex items-center gap-1.5 px-2 py-1 rounded bg-elevated/70 hover:bg-elevated border border-border text-xs text-text-secondary hover:text-text-primary transition-all font-mono shrink-0"
               title="Return to Landing Page"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-accent" />
               <span className="hidden sm:inline">Landing</span>
             </Link>
 
+            {/* Direct Link to User Guide */}
+            <Link
+              href="/guide"
+              className="flex items-center gap-1.5 px-2 py-1 rounded bg-elevated/70 hover:bg-elevated border border-border text-xs text-text-secondary hover:text-text-primary transition-all font-mono shrink-0"
+              title="User Guide & Presentation Manual"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-gain" />
+              <span className="hidden sm:inline">Guide</span>
+            </Link>
+
             {/* Quick Command Palette trigger */}
             <button
               onClick={() => setCommandPaletteOpen(true)}
-              className="flex items-center gap-2 px-2.5 py-1 rounded bg-elevated border border-border text-xs text-text-muted hover:text-text-primary hover:border-text-secondary transition-all font-mono"
+              className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded bg-elevated border border-border text-xs text-text-muted hover:text-text-primary hover:border-text-secondary transition-all font-mono shrink-0"
+              title="Search (Cmd+K)"
             >
               <Search className="w-3.5 h-3.5 text-accent" />
-              <span className="hidden sm:inline">Search tickers, models, actions...</span>
-              <kbd className="hidden sm:inline px-1 py-0.2 rounded bg-background border border-border text-[10px]">
+              <span className="hidden md:inline">Search tickers, models...</span>
+              <kbd className="hidden lg:inline px-1 py-0.2 rounded bg-background border border-border text-[10px]">
                 Cmd+K
               </kbd>
             </button>
 
             {/* Current Active Symbol & Live Price Pill */}
             <div
-              className={`flex items-center gap-2 border-l border-border pl-3 font-mono px-2 py-0.5 rounded transition-all duration-300 ${
+              className={`flex items-center gap-1.5 sm:gap-2 border-l border-border pl-2 sm:pl-3 font-mono px-1.5 sm:px-2 py-0.5 rounded transition-all duration-300 shrink-0 ${
                 priceFlash === "up"
                   ? "bg-gain/20 text-gain shadow-[0_0_12px_rgba(0,230,118,0.25)]"
                   : priceFlash === "down"
@@ -326,17 +400,17 @@ export default function CoreDashboardPage() {
                   : ""
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-gain animate-ping" />
-              <span className="font-bold text-sm text-text-primary">{selectedSymbol.replace(".NS", "")}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-gain animate-ping hidden xs:inline-block" />
+              <span className="font-bold text-xs sm:text-sm text-text-primary">{selectedSymbol.replace(".NS", "")}</span>
               <span
-                className={`text-sm font-semibold tabular-nums transition-colors duration-200 ${
+                className={`text-xs sm:text-sm font-semibold tabular-nums transition-colors duration-200 ${
                   priceFlash === "up" ? "text-gain font-bold" : priceFlash === "down" ? "text-loss font-bold" : "text-text-primary"
                 }`}
               >
                 ₹{curPrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </span>
               <span
-                className={`text-xs font-bold tabular-nums ${(curTick?.change_pct || 0) >= 0 ? "text-gain" : "text-loss"}`}
+                className={`text-[10px] sm:text-xs font-bold tabular-nums ${(curTick?.change_pct || 0) >= 0 ? "text-gain" : "text-loss"}`}
               >
                 {(curTick?.change_pct || 0) >= 0 ? "+" : ""}
                 {(curTick?.change_pct || 0).toFixed(2)}%
@@ -344,23 +418,23 @@ export default function CoreDashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Model Selector */}
-            <div className="flex items-center gap-1.5 text-xs font-mono">
-              <Cpu className="w-3.5 h-3.5 text-text-muted" />
+            <div className="flex items-center gap-1 text-xs font-mono">
+              <Cpu className="w-3.5 h-3.5 text-text-muted hidden sm:inline" />
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value as ModelId)}
-                className="bg-elevated border border-border text-xs px-2 py-1 rounded text-text-primary outline-none focus:border-accent font-mono cursor-pointer"
+                className="bg-elevated border border-border text-[11px] sm:text-xs px-1.5 sm:px-2 py-1 rounded text-text-primary outline-none focus:border-accent font-mono cursor-pointer max-w-[110px] sm:max-w-none"
               >
                 <optgroup label="Classical Machine Learning">
-                  <option value="logistic_regression">Logistic Regression (L2)</option>
-                  <option value="lightgbm">LightGBM (Gradient Boosted)</option>
-                  <option value="random_forest">Random Forest (Ensemble)</option>
+                  <option value="logistic_regression">Logistic Reg</option>
+                  <option value="lightgbm">LightGBM</option>
+                  <option value="random_forest">Random Forest</option>
                 </optgroup>
                 <optgroup label="Deep Learning (PyTorch)">
-                  <option value="lstm">LSTM (2-Layer Recurrent)</option>
-                  <option value="gru">GRU (Gated Recurrent Unit)</option>
+                  <option value="lstm">LSTM (PyTorch)</option>
+                  <option value="gru">GRU (PyTorch)</option>
                 </optgroup>
               </select>
             </div>
@@ -368,15 +442,15 @@ export default function CoreDashboardPage() {
             {/* Export Actions */}
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-elevated border border-border text-xs text-text-secondary hover:text-text-primary transition-colors font-mono"
+              className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded bg-elevated border border-border text-xs text-text-secondary hover:text-text-primary transition-colors font-mono"
               title="Download OHLCV CSV"
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">CSV</span>
+              <span className="hidden md:inline">CSV</span>
             </button>
 
             {/* IST Clock */}
-            <span className="hidden md:inline text-xs font-mono tabular-nums text-text-muted">
+            <span className="hidden xl:inline text-xs font-mono tabular-nums text-text-muted">
               {currentTime}
             </span>
 
@@ -391,7 +465,7 @@ export default function CoreDashboardPage() {
         </div>
 
         {/* Scrollable Dashboard Panels Container */}
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
+        <div className="flex-1 overflow-y-auto p-2 sm:p-3.5 space-y-3 sm:space-y-3.5 min-w-0">
           {/* Main Chart + Controls Panel */}
           <div className="bg-surface border border-border rounded p-3.5 space-y-3">
             <div className="flex items-center justify-between border-b border-border pb-2.5 flex-wrap gap-2">
@@ -527,11 +601,28 @@ export default function CoreDashboardPage() {
             {/* D3 5-Day Prediction Fan Chart */}
             <div className="bg-surface border border-border rounded p-3.5 flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <LineChart className="w-3.5 h-3.5 text-accent" />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary">
-                    Dynamic Prediction Envelope (T+{horizon})
-                  </h4>
+                <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <LineChart className="w-3.5 h-3.5 text-accent" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary">
+                      Dynamic Prediction Envelope (T+{horizon})
+                    </h4>
+                  </div>
+                  <span
+                    className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                      simulatedConviction > 0.05
+                        ? "bg-gain/20 text-gain border border-gain/40"
+                        : simulatedConviction < -0.05
+                        ? "bg-loss/20 text-loss border border-loss/40"
+                        : "bg-warning/20 text-warning border border-warning/40"
+                    }`}
+                  >
+                    {simulatedConviction > 0.05
+                      ? "EXPECTED DRIFT UP ↗"
+                      : simulatedConviction < -0.05
+                      ? "EXPECTED DRIFT DOWN ↘"
+                      : "RANGE-BOUND CHOP →"}
+                  </span>
                 </div>
                 <p className="text-[10px] text-text-muted mb-2">
                   Median forward price drift with 50% (inner) &amp; 90% (outer) confidence bands

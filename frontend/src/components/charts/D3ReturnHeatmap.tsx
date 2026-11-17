@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 
 interface HeatmapCell {
@@ -11,6 +11,19 @@ interface HeatmapCell {
 
 export function D3ReturnHeatmap({ height = 220 }: { height?: number }) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const data: HeatmapCell[] = [
     { symbol: "TCS", horizon: "1D", returnPct: 1.45 },
@@ -52,9 +65,10 @@ export function D3ReturnHeatmap({ height = 220 }: { height?: number }) {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const parentWidth = svgRef.current.parentElement?.clientWidth || 400;
-    const margin = { top: 25, right: 15, bottom: 20, left: 75 };
-    const w = parentWidth - margin.left - margin.right;
+    const parentWidth = containerWidth || containerRef.current?.clientWidth || svgRef.current.parentElement?.clientWidth || 400;
+    const isMobile = parentWidth < 450;
+    const margin = { top: 25, right: isMobile ? 10 : 15, bottom: 20, left: isMobile ? 60 : 75 };
+    const w = Math.max(10, parentWidth - margin.left - margin.right);
     const h = height - margin.top - margin.bottom;
 
     const g = svg
@@ -128,10 +142,10 @@ export function D3ReturnHeatmap({ height = 220 }: { height?: number }) {
           .attr("font-size", "10px")
           .attr("font-family", "JetBrains Mono")
       );
-  }, [height]);
+  }, [height, containerWidth]);
 
   return (
-    <div className="w-full overflow-hidden">
+    <div ref={containerRef} className="w-full overflow-hidden">
       <svg ref={svgRef} className="w-full" />
     </div>
   );

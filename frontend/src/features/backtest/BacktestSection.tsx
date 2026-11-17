@@ -34,6 +34,20 @@ export function BacktestSection({ model }: Props) {
   } | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
+  const chartWrapperRef = useRef<HTMLDivElement>(null);
+  const [wrapperWidth, setWrapperWidth] = useState<number>(0);
+
+  // Responsive resize handler for D3 chart
+  useEffect(() => {
+    const handleResize = () => {
+      if (chartWrapperRef.current) {
+        setWrapperWidth(chartWrapperRef.current.clientWidth);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Sync with parent prop change if external dropdown changes
   useEffect(() => {
@@ -70,10 +84,15 @@ export function BacktestSection({ model }: Props) {
     svg.selectAll("*").remove();
 
     const points = backtestData.equity_curve;
-    const parentWidth = svgRef.current.parentElement?.clientWidth || 700;
+    const parentWidth =
+      wrapperWidth ||
+      chartWrapperRef.current?.clientWidth ||
+      svgRef.current.parentElement?.clientWidth ||
+      700;
     const height = 260;
-    const margin = { top: 20, right: 35, bottom: 30, left: 65 };
-    const w = parentWidth - margin.left - margin.right;
+    const isMobile = parentWidth < 500;
+    const margin = { top: 20, right: isMobile ? 15 : 35, bottom: 30, left: isMobile ? 45 : 65 };
+    const w = Math.max(10, parentWidth - margin.left - margin.right);
     const h = height - margin.top - margin.bottom;
 
     const g = svg
@@ -283,7 +302,7 @@ export function BacktestSection({ model }: Props) {
         focusDotBench.style("display", "none");
         setHoveredPoint(null);
       });
-  }, [backtestData, selectedModel]);
+  }, [backtestData, selectedModel, wrapperWidth]);
 
   const metrics = backtestData?.metrics || {
     initial_equity: 100000,
@@ -439,7 +458,7 @@ export function BacktestSection({ model }: Props) {
       </div>
 
       {/* ── Genuine D3 Equity Curve SVG ── */}
-      <div className="w-full overflow-hidden bg-background/50 rounded border border-border/40 p-1 relative">
+      <div ref={chartWrapperRef} className="w-full overflow-hidden bg-background/50 rounded border border-border/40 p-1 relative">
         {loading && (
           <div className="absolute inset-0 bg-surface/70 backdrop-blur-xs flex items-center justify-center font-mono text-xs text-text-muted z-10">
             Evaluating historical walk-forward simulation...

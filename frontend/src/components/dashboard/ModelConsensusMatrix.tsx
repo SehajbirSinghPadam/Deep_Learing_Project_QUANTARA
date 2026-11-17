@@ -47,7 +47,7 @@ export function ModelConsensusMatrix({ predictions }: Props) {
 
   return (
     <div className="bg-surface border border-border rounded overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+      <div className="px-4 py-2.5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 text-accent" />
           <div>

@@ -13,6 +13,19 @@ export function MultiTickerCompare() {
   ]);
 
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const colors: Record<string, string> = {
     "TCS.NS": "#00f0ff",
@@ -37,10 +50,11 @@ export function MultiTickerCompare() {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const parentWidth = svgRef.current.parentElement?.clientWidth || 500;
+    const parentWidth = containerWidth || containerRef.current?.clientWidth || svgRef.current.parentElement?.clientWidth || 500;
     const height = 260;
-    const margin = { top: 20, right: 30, bottom: 25, left: 45 };
-    const w = parentWidth - margin.left - margin.right;
+    const isMobile = parentWidth < 450;
+    const margin = { top: 20, right: isMobile ? 15 : 30, bottom: 25, left: isMobile ? 35 : 45 };
+    const w = Math.max(10, parentWidth - margin.left - margin.right);
     const h = height - margin.top - margin.bottom;
 
     const g = svg
@@ -102,7 +116,7 @@ export function MultiTickerCompare() {
       .call((axis) =>
         axis.selectAll(".tick text").attr("fill", "#64748b").attr("font-family", "JetBrains Mono").attr("font-size", "10px")
       );
-  }, [selectedTickers]);
+  }, [selectedTickers, containerWidth]);
 
   return (
     <div className="bg-surface border border-border rounded p-3.5 space-y-3">
@@ -114,7 +128,7 @@ export function MultiTickerCompare() {
           </h4>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {(["TCS.NS", "RELIANCE.NS", "INFY.NS", "HDFCBANK.NS"] as StockSymbol[]).map((sym) => {
             const isSel = selectedTickers.includes(sym);
             return (
@@ -134,7 +148,7 @@ export function MultiTickerCompare() {
         </div>
       </div>
 
-      <div className="w-full overflow-hidden">
+      <div ref={containerRef} className="w-full overflow-hidden">
         <svg ref={svgRef} className="w-full" />
       </div>
     </div>

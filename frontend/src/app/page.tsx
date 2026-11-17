@@ -58,35 +58,32 @@ export default function LandingPage() {
       </div>
 
       {/* ── Sticky Top Navigation ── */}
-      <header className="relative z-40 h-14 border-b border-border bg-surface/80 backdrop-blur-md px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="relative z-40 h-14 border-b border-border bg-surface/80 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex items-baseline gap-1.5 font-mono">
             <span className="font-extrabold text-base text-accent tracking-tight">QUANTARA</span>
-            <span className="text-[10px] text-text-muted tracking-widest uppercase">// RESEARCH</span>
           </div>
           <span className="hidden sm:inline px-2 py-0.5 rounded text-[10px] font-mono bg-elevated border border-border text-text-muted">
             NSE 8-Stock Suite
           </span>
         </div>
 
-        <div className="flex items-center gap-4">
-          <nav className="hidden md:flex items-center gap-4 text-xs font-mono text-text-secondary">
-            <Link href="/dashboard" className="hover:text-accent transition-colors">
-              Signals
-            </Link>
-            <Link href="/dashboard" className="hover:text-accent transition-colors">
-              What-If Lab
-            </Link>
-            <Link href="/dashboard" className="hover:text-accent transition-colors">
-              Backtest
+        <div className="flex items-center gap-2 sm:gap-4">
+          <nav className="flex items-center gap-3 text-xs font-mono text-text-secondary">
+            <Link
+              href="/guide"
+              className="px-2.5 py-1 rounded bg-elevated/80 hover:bg-elevated border border-border text-text-primary hover:text-accent transition-all flex items-center gap-1.5"
+            >
+              <span>User Guide</span>
             </Link>
           </nav>
           <ThemeToggle />
           <Link
             href="/dashboard"
-            className="px-3.5 py-1.5 rounded bg-accent/20 hover:bg-accent/30 border border-accent/40 text-accent font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-[0_0_15px_rgba(0,240,255,0.15)] hover:shadow-[0_0_20px_rgba(0,240,255,0.3)]"
+            className="px-2.5 sm:px-3.5 py-1.5 rounded bg-accent/20 hover:bg-accent/30 border border-accent/40 text-accent font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-[0_0_15px_rgba(0,240,255,0.15)] hover:shadow-[0_0_20px_rgba(0,240,255,0.3)]"
           >
-            <span>Launch Dashboard</span>
+            <span className="hidden sm:inline">Launch Dashboard</span>
+            <span className="sm:hidden">Terminal</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -201,7 +198,7 @@ export default function LandingPage() {
               <span className="text-gain">3/3 Unanimous Vote</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { name: "Logistic Reg.", vote: "BUY", conf: "58.4%" },
                 { name: "Random Forest", vote: "BUY", conf: "61.2%" },
@@ -257,28 +254,28 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono">
-            <div className="p-4 rounded-lg bg-elevated border border-border text-center">
-              <div className="text-[11px] text-text-muted uppercase">Sharpe Ratio</div>
-              <div className="text-3xl font-extrabold text-accent mt-1">1.48</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 font-mono">
+            <div className="p-3 sm:p-4 rounded-lg bg-elevated border border-border text-center">
+              <div className="text-[10px] sm:text-[11px] text-text-muted uppercase">Sharpe Ratio</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-accent mt-1">1.48</div>
               <div className="text-[10px] text-text-muted mt-1 font-sans">Risk-adjusted return</div>
             </div>
 
-            <div className="p-4 rounded-lg bg-elevated border border-border text-center">
-              <div className="text-[11px] text-text-muted uppercase">Strategy Alpha</div>
-              <div className="text-3xl font-extrabold text-gain mt-1">+14.25%</div>
+            <div className="p-3 sm:p-4 rounded-lg bg-elevated border border-border text-center">
+              <div className="text-[10px] sm:text-[11px] text-text-muted uppercase">Strategy Alpha</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-gain mt-1">+14.25%</div>
               <div className="text-[10px] text-text-muted mt-1 font-sans">Excess vs benchmark</div>
             </div>
 
-            <div className="p-4 rounded-lg bg-elevated border border-border text-center">
-              <div className="text-[11px] text-text-muted uppercase">Max Drawdown</div>
-              <div className="text-3xl font-extrabold text-loss mt-1">-12.35%</div>
+            <div className="p-3 sm:p-4 rounded-lg bg-elevated border border-border text-center">
+              <div className="text-[10px] sm:text-[11px] text-text-muted uppercase">Max Drawdown</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-loss mt-1">-12.35%</div>
               <div className="text-[10px] text-text-muted mt-1 font-sans">Disciplined cash guard</div>
             </div>
 
-            <div className="p-4 rounded-lg bg-elevated border border-border text-center">
-              <div className="text-[11px] text-text-muted uppercase">Win Rate</div>
-              <div className="text-3xl font-extrabold text-text-primary mt-1">54.8%</div>
+            <div className="p-3 sm:p-4 rounded-lg bg-elevated border border-border text-center">
+              <div className="text-[10px] sm:text-[11px] text-text-muted uppercase">Win Rate</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-text-primary mt-1">54.8%</div>
               <div className="text-[10px] text-text-muted mt-1 font-sans">Across 142 swing trades</div>
             </div>
           </div>

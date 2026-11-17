@@ -52,7 +52,7 @@ export function MarketOverviewSection() {
           <span className="text-[10px] text-text-muted font-mono">Weight-Adjusted Returns</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
           {sectors.map((s, idx) => {
             const isGain = s.performance_pct >= 0;
             return (
@@ -62,7 +62,7 @@ export function MarketOverviewSection() {
                   isGain
                     ? "bg-gain/10 border-gain/20 hover:border-gain/40"
                     : "bg-loss/10 border-loss/20 hover:border-loss/40"
-                } ${idx === 0 ? "col-span-2" : ""}`}
+                } ${idx === 0 ? "sm:col-span-2" : ""}`}
               >
                 <div className="flex justify-between items-start">
                   <span className="text-xs font-bold text-text-primary">{s.name}</span>

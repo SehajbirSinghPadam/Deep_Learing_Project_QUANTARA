@@ -6,6 +6,9 @@ echo Starting Quantara AI Institutional Web Dashboard...
 echo Open your browser at: http://127.0.0.1:8000
 echo Press Ctrl+C in this window to stop the server.
 echo =====================================================================
+if exist "%~dp0.venv\Scripts\activate.bat" (
+    call "%~dp0.venv\Scripts\activate.bat"
+)
 python web_app/server.py
 if errorlevel 1 (
     echo.

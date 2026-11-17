@@ -36,6 +36,19 @@ export function ModelForecastTrajectoryChart({
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoveredPoint, setHoveredPoint] = useState<TrajectoryPoint | null>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+
+  // Responsive resize handler
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Model biases and volatility calibration
   const modelMetadata: Record<
@@ -109,13 +122,14 @@ export function ModelForecastTrajectoryChart({
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const containerWidth = containerRef.current.clientWidth || 800;
-    const margin = { top: 35, right: 40, bottom: 40, left: 65 };
-    const w = containerWidth - margin.left - margin.right;
+    const actualWidth = containerWidth || containerRef.current.clientWidth || 800;
+    const isMobile = actualWidth < 500;
+    const margin = { top: 35, right: isMobile ? 15 : 40, bottom: 40, left: isMobile ? 45 : 65 };
+    const w = Math.max(10, actualWidth - margin.left - margin.right);
     const h = height - margin.top - margin.bottom;
 
     const g = svg
-      .attr("width", containerWidth)
+      .attr("width", actualWidth)
       .attr("height", height)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
@@ -378,7 +392,7 @@ export function ModelForecastTrajectoryChart({
         setHoveredPoint(points[clampedIndex] || null);
       })
       .on("mouseleave", () => setHoveredPoint(null));
-  }, [symbol, model, horizon, currentPrice, candles, height, driftPerDay, isBullish, currentMeta]);
+  }, [symbol, model, horizon, currentPrice, candles, height, driftPerDay, isBullish, currentMeta, containerWidth]);
 
   const targetPoint = hoveredPoint || {
     label: `T+${forecastDays}`,

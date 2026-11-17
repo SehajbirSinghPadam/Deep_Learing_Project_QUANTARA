@@ -137,8 +137,8 @@ export function WhatIfSimulationPanel({
           </div>
 
           {/* SVG Radial Confidence Ring */}
-          <div className="relative w-9 h-9 flex items-center justify-center">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+          <div className="relative w-12 h-12 shrink-0 flex items-center justify-center" style={{ width: "48px", height: "48px" }}>
+            <svg className="w-12 h-12 -rotate-90" viewBox="0 0 36 36" style={{ width: "48px", height: "48px" }}>
               <path
                 className="text-elevated"
                 strokeWidth="3.5"
@@ -156,7 +156,7 @@ export function WhatIfSimulationPanel({
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
             </svg>
-            <span className="absolute text-[9px] font-mono font-extrabold text-text-primary">
+            <span className="absolute text-[10px] font-mono font-extrabold text-text-primary">
               {Math.round(confidence * 100)}%
             </span>
           </div>
@@ -306,7 +306,7 @@ export function WhatIfSimulationPanel({
                 ₹{portfolioCapital.toLocaleString("en-IN")}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {[500000, 1000000, 2500000].map((cap) => (
                 <button
                   key={cap}
@@ -320,6 +320,21 @@ export function WhatIfSimulationPanel({
                   ₹{(cap / 100000).toFixed(0)} Lakhs
                 </button>
               ))}
+              <input
+                type="number"
+                min={0}
+                placeholder="Custom ₹"
+                value={
+                  [500000, 1000000, 2500000].includes(portfolioCapital)
+                    ? ""
+                    : portfolioCapital
+                }
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (!isNaN(val) && val >= 0) setPortfolioCapital(val);
+                }}
+                className="w-28 p-1 border border-border rounded bg-elevated text-xs text-text-primary"
+              />
             </div>
           </div>
 
